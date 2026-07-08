@@ -28,7 +28,7 @@ The API supports:
    Copy-Item .env.example .env
    ```
 
-4. Edit `.env` with your Azure PostgreSQL connection details.
+4. Edit `.env` with your Azure PostgreSQL connection details. Leave only one connection style uncommented.
 
    You can either set `DATABASE_URL` directly:
 
@@ -36,7 +36,11 @@ The API supports:
    DATABASE_URL=postgresql+psycopg://db_user:db_password@your-server.postgres.database.azure.com:5432/your_database?sslmode=require
    ```
 
-   Or leave `DATABASE_URL` empty and set `POSTGRES_HOST`, `POSTGRES_DB`, `POSTGRES_USER`, and `POSTGRES_PASSWORD`.
+   Or leave `DATABASE_URL` empty and set either:
+
+   - `POSTGRES_HOST`, `POSTGRES_DB`, `POSTGRES_USER`, and `POSTGRES_PASSWORD`
+   - Azure/PostgreSQL CLI-style variables: `PGHOST`, `PGDATABASE`, `PGUSER`, and `PGPASSWORD`
+   - Azure PostgreSQL connector/libpq format: `POSTGRES_CONNINFO` or `PGCONNECT_STRING`
 
 ## Run
 
@@ -47,6 +51,23 @@ uvicorn app.main:app --reload
 The API will be available at `http://127.0.0.1:8000`.
 
 Interactive API docs are available at `http://127.0.0.1:8000/docs`.
+
+## Test Database Connection
+
+After setting your environment variables, test the database connection directly from Python:
+
+```powershell
+python scripts/test_db_connection.py
+```
+
+Expected success output includes:
+
+```text
+Database connection successful.
+Database: postgres
+Connected user: ...
+PostgreSQL version: ...
+```
 
 ## Endpoints
 
@@ -123,10 +144,36 @@ Invoke-RestMethod http://127.0.0.1:8000/government-reports
 | Variable | Required | Description |
 | --- | --- | --- |
 | `DATABASE_URL` | Optional | Full SQLAlchemy PostgreSQL URL. If set, this takes priority. |
-| `POSTGRES_HOST` | If no `DATABASE_URL` | Azure PostgreSQL host. |
-| `POSTGRES_PORT` | No | PostgreSQL port, defaults to `5432`. |
-| `POSTGRES_DB` | If no `DATABASE_URL` | Database name. |
-| `POSTGRES_USER` | If no `DATABASE_URL` | Database username. |
-| `POSTGRES_PASSWORD` | If no `DATABASE_URL` | Database password. |
+| `POSTGRES_CONNINFO` or `PGCONNECT_STRING` | Optional | Azure PostgreSQL connector/libpq string such as `host=... port=... dbname=... user=... password=...`. |
+| `POSTGRES_HOST` or `PGHOST` | If no `DATABASE_URL` | Azure PostgreSQL host. |
+| `POSTGRES_PORT` or `PGPORT` | No | PostgreSQL port, defaults to `5432`. |
+| `POSTGRES_DB` or `PGDATABASE` | If no `DATABASE_URL` | Database name. |
+| `POSTGRES_USER` or `PGUSER` | If no `DATABASE_URL` | Database username. |
+| `POSTGRES_PASSWORD` or `PGPASSWORD` | If no `DATABASE_URL` | Database password or Azure AD access token. |
 | `POSTGRES_SSLMODE` | No | Defaults to `require`, which Azure PostgreSQL commonly needs. |
 | `AUTO_CREATE_TABLES` | No | Defaults to `true`; creates the agent tables on app startup. |
+
+For Azure AD authentication, refresh `PGPASSWORD` before starting the server:
+
+```powershell
+$env:PGHOST="g13hackathon-postgredb.postgres.database.azure.com"
+$env:PGUSER="makgerutumisho55@gmail.com"
+$env:PGPORT="5432"
+$env:PGDATABASE="postgres"
+$env:PGPASSWORD=(az account get-access-token --resource https://ossrdbms-aad.database.windows.net --query accessToken --output tsv)
+uvicorn app.main:app --reload
+```
+
+You can also use Azure's connector format directly:
+
+```powershell
+$env:POSTGRES_CONNINFO='host=g13hackathon-postgredb.postgres.database.azure.com port=5432 dbname=postgres user=makgerutumisho55@gmail.com password=your_password sslmode=require'
+python scripts/test_db_connection.py
+```
+
+Or, if Azure gives you the full `pg_connect(...)` example:
+
+```powershell
+$env:PGCONNECT_STRING='pg_connect("host=g13hackathon-postgredb.postgres.database.azure.com port=5432 dbname=postgres user=makgerutumisho55@gmail.com password=your_password");'
+python scripts/test_db_connection.py
+```
