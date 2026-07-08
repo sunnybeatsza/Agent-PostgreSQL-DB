@@ -52,6 +52,16 @@ The API will be available at `http://127.0.0.1:8000`.
 
 Interactive API docs are available at `http://127.0.0.1:8000/docs`.
 
+## Tests
+
+Run the unit tests locally:
+
+```powershell
+pytest
+```
+
+The tests use an in-memory SQLite database, so they do not connect to Azure PostgreSQL.
+
 ## Test Database Connection
 
 After setting your environment variables, test the database connection directly from Python:
@@ -67,6 +77,22 @@ Database connection successful.
 Database: postgres
 Connected user: ...
 PostgreSQL version: ...
+```
+
+## Seed Demo Data
+
+After the database connection works, insert pseudo data for local/API testing:
+
+```powershell
+python scripts/seed_db.py
+```
+
+The seed script creates demo consumer profiles, appliance-profiled smart meter readings, consumer reports, alerts, government meter data, government reports, and technician records. Meter readings include appliance breakdowns in `raw_payload.appliance_breakdown` plus seeded anomalies such as `geyser_stuck_on`, `cooking_load_spike`, `fridge_continuous_draw`, and `voltage_sag`. Seeded records use `SEED-` meter IDs and `seed.*@example.com` emails so they can be removed safely.
+
+To remove only the seeded demo records:
+
+```powershell
+python scripts/cleanup_seed_data.py
 ```
 
 ## Endpoints
@@ -177,3 +203,23 @@ Or, if Azure gives you the full `pg_connect(...)` example:
 $env:PGCONNECT_STRING='pg_connect("host=g13hackathon-postgredb.postgres.database.azure.com port=5432 dbname=postgres user=makgerutumisho55@gmail.com password=your_password");'
 python scripts/test_db_connection.py
 ```
+
+## Deploy to Render
+
+This repo includes `render.yaml` for Render Blueprint deployment and `.github/workflows/ci.yml` for GitHub Actions tests.
+
+Recommended setup:
+
+1. Push this repo to GitHub.
+2. In Render, create a new Blueprint from the GitHub repo.
+3. In the Render service environment variables, set `DATABASE_URL` as a secret value.
+4. Let GitHub Actions run `pytest`.
+5. Render will deploy automatically after CI checks pass.
+
+For this app, the Render start command is:
+
+```bash
+uvicorn app.main:app --host 0.0.0.0 --port $PORT
+```
+
+If you use Azure PostgreSQL from Render, prefer a normal PostgreSQL password or long-lived connection string for `DATABASE_URL`. Azure AD access tokens expire and are not a good fit for a long-running hosted web service unless you add token refresh logic.

@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class HealthRead(BaseModel):
@@ -23,7 +23,7 @@ class Timestamps(BaseModel):
 
 class ConsumerProfileBase(BaseModel):
     full_name: str = Field(min_length=1, max_length=255)
-    email: EmailStr
+    email: str = Field(min_length=3, max_length=255)
     phone_number: str | None = Field(default=None, max_length=50)
     address: str | None = None
     meter_id: str = Field(min_length=1, max_length=100)
@@ -37,7 +37,7 @@ class ConsumerProfileCreate(ConsumerProfileBase):
 
 class ConsumerProfileUpdate(BaseModel):
     full_name: str | None = Field(default=None, min_length=1, max_length=255)
-    email: EmailStr | None = None
+    email: str | None = Field(default=None, min_length=3, max_length=255)
     phone_number: str | None = Field(default=None, max_length=50)
     address: str | None = None
     meter_id: str | None = Field(default=None, min_length=1, max_length=100)
@@ -207,7 +207,7 @@ class GovernmentReportRead(GovernmentReportBase, Timestamps, OrmModel):
 
 class TechnicianDataBase(BaseModel):
     technician_name: str = Field(min_length=1, max_length=255)
-    technician_email: EmailStr | None = None
+    technician_email: str | None = Field(default=None, min_length=3, max_length=255)
     phone_number: str | None = Field(default=None, max_length=50)
     region: str = Field(min_length=1, max_length=100)
     specialty: str | None = Field(default=None, max_length=150)
@@ -222,7 +222,7 @@ class TechnicianDataCreate(TechnicianDataBase):
 
 class TechnicianDataUpdate(BaseModel):
     technician_name: str | None = Field(default=None, min_length=1, max_length=255)
-    technician_email: EmailStr | None = None
+    technician_email: str | None = Field(default=None, min_length=3, max_length=255)
     phone_number: str | None = Field(default=None, max_length=50)
     region: str | None = Field(default=None, min_length=1, max_length=100)
     specialty: str | None = Field(default=None, max_length=150)

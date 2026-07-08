@@ -1,12 +1,12 @@
-import sys
-from pathlib import Path
+try:
+    from _path import add_project_root_to_path
+except ModuleNotFoundError:
+    from scripts._path import add_project_root_to_path
 
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+add_project_root_to_path()
 
 from app.config import get_settings, parse_pg_conninfo
 from app.database import engine

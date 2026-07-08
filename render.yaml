@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: agent-postgresql-db-api
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.5
+      - key: APP_NAME
+        value: Agent PostgreSQL API
+      - key: APP_ENV
+        value: production
+      - key: DEBUG
+        value: false
+      - key: AUTO_CREATE_TABLES
+        value: true
+      - key: DATABASE_URL
+        sync: false

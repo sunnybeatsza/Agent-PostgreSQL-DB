@@ -2,6 +2,7 @@ from collections.abc import Generator
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
+from sqlalchemy.pool import StaticPool
 
 from app.config import get_settings
 
@@ -12,12 +13,13 @@ class Base(DeclarativeBase):
 
 settings = get_settings()
 
-engine = create_engine(
-    settings.sqlalchemy_database_url,
-    pool_pre_ping=True,
-    pool_size=5,
-    max_overflow=10,
-)
+engine_options = {"pool_pre_ping": True}
+if settings.sqlalchemy_database_url.startswith("sqlite"):
+    engine_options.update({"connect_args": {"check_same_thread": False}, "poolclass": StaticPool})
+else:
+    engine_options.update({"pool_size": 5, "max_overflow": 10})
+
+engine = create_engine(settings.sqlalchemy_database_url, **engine_options)
 
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False, expire_on_commit=False)
 
